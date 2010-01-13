@@ -28,51 +28,54 @@ class ProcessingNode
   end
 
   def run
-    #while true
-      # main processing loop that accepts new job from server, server address
-      # is passed as argument to the program.
-
-      # STEP 1: Fetch new job from server
-      # STEP 2: If there are no jobs, sleep and try again
-      # STEP 3: If there is a job found in STEP 1, then parse the payload
-      # STEP 4: Assuming new job, create tempdir()
-      # STEP 5: Save the r-script that was fetched as part of new job payload
-      # STEP 5: Fetch Datasets, if any from S3 if indicated in job payload.
-      #         Currently the datasets is not yet supported in Phase 1 so not
-      #         implemented yet.
-      # STEP 6: Call RSRuby wrapper code to execute the R script, this is a
-      #         currently blocking call, not multithreaded etc.
-      # STEP 7: Next step is calling storage wrapper code to store results
-      #         and logs in S3.
-      # STEP 8: Mark status of the job on server as 'done' or 'cancelled'
-      # STEP 9: Repeat STEP 1.
-      job = nil
+    while true
       begin
-        # STEP 1
-        job = fetch_next_job()
+        # main processing loop that accepts new job from server, server address
+        # is passed as argument to the program.
 
-        # STEP 3-6
-        job.run if !job.nil?
-
-        # STEP 7
-        store_results_and_logs(job) if !job.nil?
-
-        # STEP 8
-        job_completed(job, true) if !job.nil?
-      rescue => err
-        $logger.fatal(err)
-
-        # STEP 7
-        store_results_and_logs(job) if !job.nil?
-
-        # STEP 8
-        job_completed(job, false) if job.nil?
+        # STEP 1: Fetch new job from server
+        # STEP 2: If there are no jobs, sleep and try again
+        # STEP 3: If there is a job found in STEP 1, then parse the payload
+        # STEP 4: Assuming new job, create tempdir()
+        # STEP 5: Save the r-script that was fetched as part of new job payload
+        # STEP 5: Fetch Datasets, if any from S3 if indicated in job payload.
+        #         Currently the datasets is not yet supported in Phase 1 so not
+        #         implemented yet.
+        # STEP 6: Call RSRuby wrapper code to execute the R script, this is a
+        #         currently blocking call, not multithreaded etc.
+        # STEP 7: Next step is calling storage wrapper code to store results
+        #         and logs in S3.
+        # STEP 8: Mark status of the job on server as 'done' or 'cancelled'
+        # STEP 9: Repeat STEP 1.
         job = nil
-      end
+        begin
+          # STEP 1
+          job = fetch_next_job()
 
+          # STEP 3-6
+          job.run if !job.nil?
+
+          # STEP 7
+          job.store_results_and_logs if !job.nil?
+
+          # STEP 8
+          job_completed(job, true) if !job.nil?
+        rescue => err
+          $logger.fatal(err)
+
+          # STEP 7
+          job.store_results_and_logs if !job.nil?
+
+          # STEP 8
+          job_completed(job, false) if job.nil?
+          job = nil
+        end
+      rescue => err2
+        $logger.fatal(err2)
+      end
       # STEP 2 & STEP 9
       sleep(1)
-    #end
+    end
   end
 
   def fetch_next_job
@@ -83,24 +86,29 @@ class ProcessingNode
     job
   end
 
+  # THE FOLLOWING FUNCTION IS NOT BEING USED RIGHT NOW.. WE WILL SEE IN LATER PHASES
   def store_results_and_logs(job)
     # since job is complete, fetch from server the location to store output
     # two locations for log and results
-    upload_payload_length = "upload_type=logs&files=job.log".length
-    job.store_logs(@site["jobs/#{job.get_id}/uploadurls.xml"].get 'upload_type=logs&files=job.log', {:content_length => "#{upload_payload_length.to_s}", :content_type => 'text/plain'})
+    #upload_payload_length = "upload_type=logs&files=job.log".length
+    #job.store_logs(@site["jobs/#{job.get_id}/uploadurls.xml"].get 'upload_type=logs&files=job.log', {:content_length => "#{upload_payload_length.to_s}", :content_type => 'text/plain'})
+    #job.store_logs
 
-    upload_payload_length = "upload_type=results&files=job.log".length
-    job.store_results(@site["jobs/#{job.get_id}/uploadurls.xml"].get 'upload_type=results&files=job.log', {:content_length => "#{upload_payload_length.to_s}", :content_type => 'text/plain'})
+    #upload_payload_length = "upload_type=results&files=job.log".length
+    #job.store_results(@site["jobs/#{job.get_id}/uploadurls.xml"].get 'upload_type=results&files=job.log', {:content_length => "#{upload_payload_length.to_s}", :content_type => 'text/plain'})
+    #job.store_results
   end
   
   def job_completed(job, successful)
     # mark status of the job on server
     if successful
-      success_length = "success=true".length
-      @site["jobs/#{job.get_id}/done.xml"].put 'success=true', {:content_length => "#{success_length.to_s}", :content_type => 'text/plain'}
+      #success_length = "success=true".length
+      #@site["jobs/#{job.get_id}/done.xml?success=true"].put '', {:content_length => '0', :content_type => 'text/plain'}
+      system("curl -X PUT -H 'Content-length: 0' http://#{@server_node}/jobs/#{job.get_id}/done.xml?success=true")
     else
-      success_length = "success=false".length
-      @site["jobs/#{job.get_id}/done.xml"].put 'success=false', {:content_length => "#{success_length.to_s}", :content_type => 'text/plain'}
+      #success_length = "success=false".length
+      #@site["jobs/#{job.get_id}/done.xml?success=false"].put '', {:content_length => '0', :content_type => 'text/plain'}
+      system("curl -X PUT -H 'Content-length: 0' http://#{@server_node}/jobs/#{job.get_id}/done.xml?success=false")
     end
   end
 end
@@ -108,10 +116,7 @@ end
 #################################################################
 # MAIN PROGRAM CALL (this is the START)
 # initialize and launch, ensure command line has server address
-$curr_uuid = rand_uuid
-create_if_missing_directory $curr_uuid
-
-$logger = Logger.new("#{$curr_uuid}/processing_node_error.log")
+$logger = Logger.new("/tmp/processing_node_error.log")
 
 server = ARGV[0]
 
