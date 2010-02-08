@@ -17,7 +17,6 @@ require 'logger'
 
 require 'job'
 require 'global'
-require 'util'
 
 class ProcessingNode
   attr_reader :server_node, :site
@@ -61,7 +60,7 @@ class ProcessingNode
           # STEP 8
           job_completed(job, true) if !job.nil?
         rescue => err
-          $logger.fatal(err)
+          Global.logger.fatal(err)
 
           # STEP 7
           job.store_results_and_logs if !job.nil?
@@ -71,7 +70,7 @@ class ProcessingNode
           job = nil
         end
       rescue => err2
-        $logger.fatal(err2)
+        Global.logger.fatal(err2)
       end
       # STEP 2 & STEP 9
       sleep(1)
@@ -86,29 +85,19 @@ class ProcessingNode
     job
   end
 
-  # THE FOLLOWING FUNCTION IS NOT BEING USED RIGHT NOW.. WE WILL SEE IN LATER PHASES
-  def store_results_and_logs(job)
-    # since job is complete, fetch from server the location to store output
-    # two locations for log and results
-    #upload_payload_length = "upload_type=logs&files=job.log".length
-    #job.store_logs(@site["jobs/#{job.get_id}/uploadurls.xml"].get 'upload_type=logs&files=job.log', {:content_length => "#{upload_payload_length.to_s}", :content_type => 'text/plain'})
-    #job.store_logs
-
-    #upload_payload_length = "upload_type=results&files=job.log".length
-    #job.store_results(@site["jobs/#{job.get_id}/uploadurls.xml"].get 'upload_type=results&files=job.log', {:content_length => "#{upload_payload_length.to_s}", :content_type => 'text/plain'})
-    #job.store_results
-  end
-  
   def job_completed(job, successful)
     # mark status of the job on server
     if successful
       #success_length = "success=true".length
       #@site["jobs/#{job.get_id}/done.xml?success=true"].put '', {:content_length => '0', :content_type => 'text/plain'}
+      Global.logger.info('COMPLETED JOB, MARKING JOB SUCCESSFUL')
+
       system("curl -X PUT -H 'Content-length: 0' http://#{@server_node}/jobs/#{job.get_id}/done.xml?success=true")
     else
       #success_length = "success=false".length
       #@site["jobs/#{job.get_id}/done.xml?success=false"].put '', {:content_length => '0', :content_type => 'text/plain'}
       system("curl -X PUT -H 'Content-length: 0' http://#{@server_node}/jobs/#{job.get_id}/done.xml?success=false")
+      Global.logger.info('FAILED JOB, MARKING JOB FAILURE')
     end
   end
 end
@@ -116,7 +105,8 @@ end
 #################################################################
 # MAIN PROGRAM CALL (this is the START)
 # initialize and launch, ensure command line has server address
-$logger = Logger.new("/tmp/processing_node_error.log")
+Global.set_logger Logger.new("/tmp/processing_node_error.log")
+Global.set_root_dir
 
 server = ARGV[0]
 
