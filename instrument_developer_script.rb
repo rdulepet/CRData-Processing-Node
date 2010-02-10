@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+#
 require 'rubygems'
 require 'fileutils'
 require 'global'
@@ -8,15 +10,15 @@ class InstrumentDeveloperScript
   private_class_method :new
 
   ######## TAG LIBRARY
-  CRDATA_HEADER = "#<crdata_header/>"
-  CRDATA_TITLE = "#<crdata_title>(.*)</crdata_title>"
-  CRDATA_TEXT = "#<crdata_text>(.*)</crdata_text>"
-  CRDATA_OBJECT = "#<crdata_object>(.*)</crdata_object>"
-  CRDATA_SECTION = "#<crdata_section/>"
-  CRDATA_EMPTY_LINE = "#<crdata_empty_line/>"
-  CRDATA_IMAGE_START = "#<crdata_image caption=\"(.*)\">"
-  CRDATA_IMAGE_END = "#</crdata_image>"
-  CRDATA_FOOTER = "#<crdata_footer/>"
+  CRDATA_HEADER = "^\s*#\s*<\s*crdata_header\s*/>"
+  CRDATA_TITLE = "^\s*#\s*<\s*crdata_title\s*>\s*(.*)\s*</\s*crdata_title\s*>"
+  CRDATA_TEXT = "^\s*#\s*<\s*crdata_text\s*>\s*(.*)\s*</\s*crdata_text\s*>"
+  CRDATA_OBJECT = "^\s*#\s*<\s*crdata_object\s*>(.*)</\s*crdata_object\s*>"
+  CRDATA_SECTION = "^\s*#\s*<\s*crdata_section\s*/>"
+  CRDATA_EMPTY_LINE = "^\s*#\s*<\s*crdata_empty_line\s*/>"
+  CRDATA_IMAGE_START = "^\s*#\s*<\s*crdata_image caption\s*=\s*\"(.*)\"\s*>"
+  CRDATA_IMAGE_END = "^\s*#\s*</\s*crdata_image\s*>"
+  CRDATA_FOOTER = "^\s*#\s*<\s*crdata_footer\s*/>"
 
   ALREADY_INSTRUMENTED = "library.*R2HTML"
 
@@ -43,51 +45,27 @@ class InstrumentDeveloperScript
       amatch = /#{CRDATA_HEADER}/.match(line)
       if amatch
         arr_instrumented[arr_instrumented.length] = "library(\"R2HTML\")\ncrdata_job_log <- file(\"job.log\", open=\"wt\")\nsink(crdata_job_log)\ncrdata_target <- HTMLInitFile(getwd(), filename=\"index\")\n"
+      elsif amatch = /#{CRDATA_FOOTER}/.match(line)
+        arr_instrumented[arr_instrumented.length] = "HTMLEndFile()\nsink()\n"
+      elsif amatch = /#{CRDATA_SECTION}/.match(line)
+        arr_instrumented[arr_instrumented.length] = "HTML(\"<hr>\", file=crdata_target)\n"
+      elsif amatch = /#{CRDATA_EMPTY_LINE}/.match(line)
+        arr_instrumented[arr_instrumented.length] = "HTML(\"<br>\", file=crdata_target)\n"
+      elsif amatch = /#{CRDATA_TITLE}/.match(line)
+        arr_instrumented[arr_instrumented.length] = "HTML(as.title(\"#{amatch[1]}\"),file=crdata_target)\n"
+      elsif amatch = /#{CRDATA_TEXT}/.match(line)
+        arr_instrumented[arr_instrumented.length] = "HTML(\"#{amatch[1]}\", file=crdata_target)\n"
+      elsif amatch = /#{CRDATA_OBJECT}/.match(line)
+        arr_instrumented[arr_instrumented.length] = "HTML(#{amatch[1]}, file=crdata_target)\n"
+      elsif amatch = /#{CRDATA_IMAGE_START}/.match(line)
+        curr_random_uuid = Global.rand_uuid
+        curr_caption = ""
+        curr_caption = amatch[1] if amatch.length == 2
+        arr_instrumented[arr_instrumented.length] = "png(file.path(getwd(),\"#{curr_random_uuid}.png\"))\n"
+      elsif amatch = /#{CRDATA_IMAGE_END}/.match(line)
+        arr_instrumented[arr_instrumented.length] = "dev.off()\nHTMLInsertGraph(\"#{curr_random_uuid}.png\", file=crdata_target,caption=\"#{curr_caption}\")\n"
       else
-        amatch = /#{CRDATA_FOOTER}/.match(line)
-        if amatch
-          arr_instrumented[arr_instrumented.length] = "HTMLEndFile()\nsink()\n"
-        else
-          amatch = /#{CRDATA_SECTION}/.match(line)
-          if amatch
-            arr_instrumented[arr_instrumented.length] = "HTML(\"<hr>\", file=crdata_target)\n"
-          else
-            amatch = /#{CRDATA_EMPTY_LINE}/.match(line)
-            if amatch
-              arr_instrumented[arr_instrumented.length] = "HTML(\"<br>\", file=crdata_target)\n"
-            else
-              amatch = /#{CRDATA_TITLE}/.match(line)
-              if amatch
-                arr_instrumented[arr_instrumented.length] = "HTML(as.title(\"#{amatch[1]}\"),file=crdata_target)\n"
-              else
-                amatch = /#{CRDATA_TEXT}/.match(line)
-                if amatch
-                  arr_instrumented[arr_instrumented.length] = "HTML(\"#{amatch[1]}\", file=crdata_target)\n"
-                else
-                  amatch = /#{CRDATA_OBJECT}/.match(line)
-                  if amatch
-                    arr_instrumented[arr_instrumented.length] = "HTML(#{amatch[1]}, file=crdata_target)\n"
-                  else
-                    amatch = /#{CRDATA_IMAGE_START}/.match(line)
-                    if amatch
-                      curr_random_uuid = Global.rand_uuid
-                      curr_caption = ""
-                      curr_caption = amatch[1] if amatch.length == 2
-                      arr_instrumented[arr_instrumented.length] = "png(file.path(getwd(),\"#{curr_random_uuid}.png\"))\n"
-                    else
-                      amatch = /#{CRDATA_IMAGE_END}/.match(line)
-                      if amatch
-                        arr_instrumented[arr_instrumented.length] = "dev.off()\nHTMLInsertGraph(\"#{curr_random_uuid}.png\", file=crdata_target,caption=\"#{curr_caption}\")\n"
-                      else
-                        arr_instrumented[arr_instrumented.length] = line
-                      end
-                    end
-                  end
-                end
-              end
-            end
-          end
-        end
+        arr_instrumented[arr_instrumented.length] = line
       end
     end
 
@@ -99,4 +77,5 @@ class InstrumentDeveloperScript
 
 end
 
+# dummy test for instrumentation, commented in production mode
 #InstrumentDeveloperScript.instrument_code("some.r")
