@@ -41,13 +41,21 @@ class InstrumentDeveloperScript
     curr_random_uuid = ""
     curr_caption = ""
 
+    # automatically take care of HEADER mandatory tag
+    arr_instrumented[arr_instrumented.length] = "library(\"R2HTML\")\ncrdata_job_log <- file(\"job.log\", open=\"wt\")\nsink(crdata_job_log)\ncrdata_target <- HTMLInitFile(getwd(), filename=\"index\")\n"
+
     File.open(orig_r_script, "r").each do | line |
+=begin
+      # commented this code because we want to take care MANDATORY tagging automatically
+      # this essentially applies to HEADER and FOOTER
       amatch = /#{CRDATA_HEADER}/.match(line)
       if amatch
         arr_instrumented[arr_instrumented.length] = "library(\"R2HTML\")\ncrdata_job_log <- file(\"job.log\", open=\"wt\")\nsink(crdata_job_log)\ncrdata_target <- HTMLInitFile(getwd(), filename=\"index\")\n"
       elsif amatch = /#{CRDATA_FOOTER}/.match(line)
         arr_instrumented[arr_instrumented.length] = "HTMLEndFile()\nsink()\n"
-      elsif amatch = /#{CRDATA_SECTION}/.match(line)
+      elsif
+=end
+      if amatch = /#{CRDATA_SECTION}/.match(line)
         arr_instrumented[arr_instrumented.length] = "HTML(\"<hr>\", file=crdata_target)\n"
       elsif amatch = /#{CRDATA_EMPTY_LINE}/.match(line)
         arr_instrumented[arr_instrumented.length] = "HTML(\"<br>\", file=crdata_target)\n"
@@ -68,6 +76,9 @@ class InstrumentDeveloperScript
         arr_instrumented[arr_instrumented.length] = line
       end
     end
+
+    # automatically take care of FOOTER mandatory tag
+    arr_instrumented[arr_instrumented.length] = "HTMLEndFile()\nsink()\n"
 
     # now write instrumented array into the original R script
     r_script_file_handle = File.open(orig_r_script, aModeString="w")
