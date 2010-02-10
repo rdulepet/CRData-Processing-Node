@@ -105,8 +105,9 @@ end
 #################################################################
 # MAIN PROGRAM CALL (this is the START)
 # initialize and launch, ensure command line has server address
-Global.set_logger Logger.new("/tmp/processing_node_error.log")
+Global.set_logger Logger.new(Global.LOG_FILE)
 Global.set_root_dir
+Global.set_results_dir
 
 server = ARGV[0]
 

@@ -11,6 +11,7 @@ require 'rsruby'
 require 'cgi'
 
 require 'global'
+require 'instrument_developer_script'
 
 
 class Job
@@ -38,14 +39,14 @@ class Job
     # go back to root dir before starting
     FileUtils.cd Global.root_dir
     
-    Global.create_if_missing_directory @curr_uuid
-    @r_script_filename = "#{@curr_uuid}/#{@curr_uuid}.r"
+    Global.create_if_missing_directory Global.results_dir + "/" + @curr_uuid
+    @r_script_filename = "#{Global.results_dir}/#{@curr_uuid}/#{@curr_uuid}.r"
     doc = Hpricot::XML(xml_response)
 
     # at the moment we extract only JOB ID and script content
     # rest such as data we will look at it in later phases.
     @job_id = (doc/'job'/'id').inner_text
-    Global.logger.info("JOB_ID = #{@job_id}, LOCAL_DIR = #{Global.root_dir}/#{@curr_uuid}, SCRIPT_NAME = #{@r_script_filename}")
+    Global.logger.info("JOB_ID = #{@job_id}, LOCAL_DIR = #{Global.results_dir}/#{@curr_uuid}, SCRIPT_NAME = #{@r_script_filename}")
     r_script = (doc/'source-code').inner_text
     r_script_file_handle = File.open(@r_script_filename, aModeString="w")
     r_script_file_handle.puts r_script
@@ -66,7 +67,7 @@ class Job
         @r_call_interface.assign(job_params[PARAM_NAME], just_name)
         Global.logger.info("R_PARAMETER::#{job_params[PARAM_NAME]} = #{just_name}")
 
-        data_file_handle = File.new("#{Global.root_dir}/#{@curr_uuid}/#{just_name}", 'wb')
+        data_file_handle = File.new("#{Global.results_dir}/#{@curr_uuid}/#{just_name}", 'wb')
         # stream file in chunks especially makes more sense for larger files
         rhdr = Global.s3if.get(Global::MAIN_BUCKET, job_params[PARAM_DATA_SET].to_s.clean_s3_url) do |chunk|
           data_file_handle.write chunk
@@ -86,7 +87,18 @@ class Job
     Global.logger.info('successfully created job and saved R file')
     # this will run the R program that generates log file and results
     #system "cd #{Dir::pwd}/#{@curr_uuid}; r CMD BATCH #{@curr_uuid}.r; mv #{@curr_uuid}.r.Rout job.log; "
-    @r_call_interface.setwd("#{Global.root_dir}/#{@curr_uuid}")
+    @r_call_interface.setwd("#{Global.results_dir}/#{@curr_uuid}")
+
+    # check if the R code was already instrumented by the developer
+    # if so then skip instrumentation and just trust it
+    # otherwise instrument it
+    if !InstrumentDeveloperScript::checkif_already_instrumented_code "#{@curr_uuid}.r"
+      # instrument the R code before running the job to capture output
+      # to capture HTML output as well as log stuff
+      InstrumentDeveloperScript::instrument_code "#{@curr_uuid}.r"
+    end
+    
+    # run the instrumented script
     @r_call_interface.eval_R("source('#{@curr_uuid}.r')")
   end
 
@@ -112,7 +124,7 @@ class Job
     # first store log
     begin
       puts "LOG_FILE = logs/job_#{normalized_get_id}/job.log"
-      Global.s3if.put(Global::MAIN_BUCKET, "logs/job_#{normalized_get_id}/job.log", File.open("#{Global.root_dir}/#{@curr_uuid}/job.log"), Global::S3_OPTIONS)
+      Global.s3if.put(Global::MAIN_BUCKET, "logs/job_#{normalized_get_id}/job.log", File.open("#{Global.results_dir}/#{@curr_uuid}/job.log"), Global::S3_OPTIONS)
     rescue => err_store_log
       Global.logger.info('probably no error log generated, happens for successful jobs that have no output or error')
     end
@@ -121,17 +133,18 @@ class Job
     # upload only web content files for results
     # .html,.htm,.css,.png,.pdf,.jpg
     # iterate through directory and store files one at a time in S3
-    upload_files = Dir[File.join("#{Global.root_dir}/#{@curr_uuid}", "*")].select{|file| File.ftype(file) == "file" &&
+    upload_files = Dir[File.join("#{Global.results_dir}/#{@curr_uuid}", "*")].select{|file| File.ftype(file) == "file" &&
                   (File.extname(file) == '.jpg' ||
                   File.extname(file) == '.png' ||
+                  File.extname(file) == '.gif' ||
                   File.extname(file) == '.html' ||
                   File.extname(file) == '.htm' ||
                   File.extname(file) == '.js' ||
                   File.extname(file) == '.css' ||
                   File.extname(file) == '.pdf')}.each{|name|
                       name = name.split("/").last
-                      puts "RESULTS_FILE = #{Global.root_dir}/#{@curr_uuid}/#{name}"
-                      Global.s3if.put(Global::MAIN_BUCKET, "results/job_#{normalized_get_id}/#{name}", File.open("#{Global.root_dir}/#{@curr_uuid}/#{name}"), Global::S3_OPTIONS)
+                      puts "RESULTS_FILE = #{Global.results_dir}/#{@curr_uuid}/#{name}"
+                      Global.s3if.put(Global::MAIN_BUCKET, "results/job_#{normalized_get_id}/#{name}", File.open("#{Global.results_dir}/#{@curr_uuid}/#{name}"), Global::S3_OPTIONS)
                   }
 
   end

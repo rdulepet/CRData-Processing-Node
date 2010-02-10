@@ -12,6 +12,7 @@ class Global
   @@global = nil
   @@logger = nil
   @@root_dir = nil
+  @@results_dir = nil
 
   # CONSTANTS
   # parse xml find S3 location and store results in S3
@@ -21,6 +22,9 @@ class Global
   AWS_SECRET_KEY = 'qwFN8VVgAIN2z8dF1ucxzYYG54KErx0EPjS0lsKq'
   MAIN_BUCKET    = 'crdataapp'
   MAIN_BUCKET_URL = 'http://crdataapp.s3.amazonaws.com/'
+
+  TEMP_DIR = "temp"
+  LOG_FILE = "/tmp/processing_node_error.log"
 
   def Global.create
     @@global = new unless @@global
@@ -39,8 +43,17 @@ class Global
       @@root_dir
   end
 
+  def self.results_dir
+      @@results_dir
+  end
+
   def self.set_root_dir
-      @@root_dir = FileUtils.pwd
+      @@root_dir = FileUtils.pwd unless @@root_dir
+  end
+
+  def self.set_results_dir
+      Dir.mkdir(TEMP_DIR) unless File.exists?(TEMP_DIR)
+      @@results_dir = (FileUtils.pwd + "/" + TEMP_DIR) unless @@results_dir
   end
 
   # Helper to return an interface to S3

@@ -18,6 +18,22 @@ class InstrumentDeveloperScript
   CRDATA_IMAGE_END = "#</crdata_image>"
   CRDATA_FOOTER = "#<crdata_footer/>"
 
+  ALREADY_INSTRUMENTED = "library.*R2HTML"
+
+  def self.checkif_already_instrumented_code orig_r_script
+    File.open(orig_r_script, "r").each do | line |
+      amatch = /#{ALREADY_INSTRUMENTED}/.match(line)
+      if amatch
+        # well it looks like already instrumented with R2HTML
+        # so just trust the code and run with it without
+        # instrumentation.
+        return true
+      end
+    end
+
+    return false
+  end
+  
   def self.instrument_code orig_r_script
     arr_instrumented = Array.new
     curr_random_uuid = ""
@@ -26,11 +42,11 @@ class InstrumentDeveloperScript
     File.open(orig_r_script, "r").each do | line |
       amatch = /#{CRDATA_HEADER}/.match(line)
       if amatch
-        arr_instrumented[arr_instrumented.length] = "library(\"R2HTML\")\ncrdata_target <- HTMLInitFile(getwd(), filename=\"index\")\n"
+        arr_instrumented[arr_instrumented.length] = "library(\"R2HTML\")\ncrdata_job_log <- file(\"job.log\", open=\"wt\")\nsink(crdata_job_log)\ncrdata_target <- HTMLInitFile(getwd(), filename=\"index\")\n"
       else
         amatch = /#{CRDATA_FOOTER}/.match(line)
         if amatch
-          arr_instrumented[arr_instrumented.length] = "HTMLEndFile()\n"
+          arr_instrumented[arr_instrumented.length] = "HTMLEndFile()\nsink()\n"
         else
           amatch = /#{CRDATA_SECTION}/.match(line)
           if amatch
@@ -83,4 +99,4 @@ class InstrumentDeveloperScript
 
 end
 
-InstrumentDeveloperScript.instrument_code("some.r")
+#InstrumentDeveloperScript.instrument_code("some.r")
