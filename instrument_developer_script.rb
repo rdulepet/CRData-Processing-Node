@@ -17,6 +17,7 @@ class InstrumentDeveloperScript
   CRDATA_SECTION = "^\s*#\s*<\s*crdata_section\s*/>"
   CRDATA_EMPTY_LINE = "^\s*#\s*<\s*crdata_empty_line\s*/>"
   CRDATA_IMAGE_START = "^\s*#\s*<\s*crdata_image caption\s*=\s*\"(.*)\"\s*>"
+  CRDATA_IMAGE_START_ALT = "^\s*#\s*<\s*crdata_image\s*>"
   CRDATA_IMAGE_END = "^\s*#\s*</\s*crdata_image\s*>"
   CRDATA_FOOTER = "^\s*#\s*<\s*crdata_footer\s*/>"
 
@@ -70,6 +71,10 @@ class InstrumentDeveloperScript
         curr_caption = ""
         curr_caption = amatch[1] if amatch.length == 2
         arr_instrumented[arr_instrumented.length] = "png(file.path(getwd(),\"#{curr_random_uuid}.png\"))\n"
+      elsif amatch = /#{CRDATA_IMAGE_START_ALT}/.match(line)
+        curr_random_uuid = Global.rand_uuid
+        curr_caption = ""
+        arr_instrumented[arr_instrumented.length] = "png(file.path(getwd(),\"#{curr_random_uuid}.png\"))\n"
       elsif amatch = /#{CRDATA_IMAGE_END}/.match(line)
         arr_instrumented[arr_instrumented.length] = "dev.off()\nHTMLInsertGraph(\"#{curr_random_uuid}.png\", file=crdata_target,caption=\"#{curr_caption}\")\n"
       else
@@ -89,4 +94,4 @@ class InstrumentDeveloperScript
 end
 
 # dummy test for instrumentation, commented in production mode
-#InstrumentDeveloperScript.instrument_code("some.r")
+InstrumentDeveloperScript.instrument_code("some.r")
