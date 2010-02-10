@@ -94,4 +94,4 @@ class InstrumentDeveloperScript
 end
 
 # dummy test for instrumentation, commented in production mode
-InstrumentDeveloperScript.instrument_code("some.r")
+#InstrumentDeveloperScript.instrument_code("some.r")
