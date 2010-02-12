@@ -16,9 +16,11 @@ class InstrumentDeveloperScript
   CRDATA_OBJECT = "^\s*#\s*<\s*crdata_object\s*>(.*)</\s*crdata_object\s*>"
   CRDATA_SECTION = "^\s*#\s*<\s*crdata_section\s*/>"
   CRDATA_EMPTY_LINE = "^\s*#\s*<\s*crdata_empty_line\s*/>"
-  CRDATA_IMAGE_START = "^\s*#\s*<\s*crdata_image caption\s*=\s*\"(.*)\"\s*>"
+  CRDATA_IMAGE_START = "^\s*#\s*<\s*crdata_image\s+caption\s*=\s*\"(.*)\"\s*>"
   CRDATA_IMAGE_START_ALT = "^\s*#\s*<\s*crdata_image\s*>"
+  CRDATA_IMAGE_START_END = "^\s*#\s*<\s*crdata_image(\s+caption\s*=\s*\"(.*)\")?\s*>(.*)(<\/\s*crdata_image\s*>)?"
   CRDATA_IMAGE_END = "^\s*#\s*</\s*crdata_image\s*>"
+  CRDATA_IMAGE_END_ALT = "\s*</\s*crdata_image\s*>"
   CRDATA_FOOTER = "^\s*#\s*<\s*crdata_footer\s*/>"
 
   ALREADY_INSTRUMENTED = "library.*R2HTML"
@@ -66,6 +68,24 @@ class InstrumentDeveloperScript
         arr_instrumented[arr_instrumented.length] = "HTML(\"#{amatch[1]}\", file=crdata_target)\n"
       elsif amatch = /#{CRDATA_OBJECT}/.match(line)
         arr_instrumented[arr_instrumented.length] = "HTML(#{amatch[1]}, file=crdata_target)\n"
+      elsif amatch = /#{CRDATA_IMAGE_START_END}/.match(line)
+        curr_random_uuid = Global.rand_uuid
+        curr_caption = ""
+        some_r_code_found = ""
+
+        curr_caption = amatch[2] if amatch[2] != nil and amatch[2] != ""
+        some_r_code_found = amatch[3] if amatch[3] != nil and amatch[3] != ""
+        arr_instrumented[arr_instrumented.length] = "\npng(file.path(getwd(),\"#{curr_random_uuid}.png\"))\n"
+        if some_r_code_found != nil and some_r_code_found != ""
+          arr_instrumented[arr_instrumented.length] = some_r_code_found.gsub(/#{CRDATA_IMAGE_END_ALT}/,"")
+          # now see if we found END tag also, if so then insert image end instrumentation
+          if /#{CRDATA_IMAGE_END_ALT}/.match(some_r_code_found)
+            arr_instrumented[arr_instrumented.length] = "\ndev.off()\nHTMLInsertGraph(\"#{curr_random_uuid}.png\", file=crdata_target,caption=\"#{curr_caption}\")\n"
+            curr_random_uuid = ""
+            curr_caption = ""
+          end
+        end
+=begin
       elsif amatch = /#{CRDATA_IMAGE_START}/.match(line)
         curr_random_uuid = Global.rand_uuid
         curr_caption = ""
@@ -75,15 +95,18 @@ class InstrumentDeveloperScript
         curr_random_uuid = Global.rand_uuid
         curr_caption = ""
         arr_instrumented[arr_instrumented.length] = "png(file.path(getwd(),\"#{curr_random_uuid}.png\"))\n"
+=end
       elsif amatch = /#{CRDATA_IMAGE_END}/.match(line)
-        arr_instrumented[arr_instrumented.length] = "dev.off()\nHTMLInsertGraph(\"#{curr_random_uuid}.png\", file=crdata_target,caption=\"#{curr_caption}\")\n"
+        arr_instrumented[arr_instrumented.length] = "\ndev.off()\nHTMLInsertGraph(\"#{curr_random_uuid}.png\", file=crdata_target,caption=\"#{curr_caption}\")\n"
+        curr_random_uuid = ""
+        curr_caption = ""
       else
         arr_instrumented[arr_instrumented.length] = line
       end
     end
 
     # automatically take care of FOOTER mandatory tag
-    arr_instrumented[arr_instrumented.length] = "HTMLEndFile()\nsink()\n"
+    arr_instrumented[arr_instrumented.length] = "\nHTMLEndFile()\nsink()\n"
 
     # now write instrumented array into the original R script
     r_script_file_handle = File.open(orig_r_script, aModeString="w")
