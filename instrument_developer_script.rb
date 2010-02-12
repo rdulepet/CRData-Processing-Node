@@ -45,7 +45,7 @@ class InstrumentDeveloperScript
     curr_caption = ""
 
     # automatically take care of HEADER mandatory tag
-    arr_instrumented[arr_instrumented.length] = "library(\"R2HTML\")\ncrdata_job_log <- file(\"job.log\", open=\"wt\")\nsink(crdata_job_log)\ncrdata_target <- HTMLInitFile(getwd(), filename=\"index\")\n"
+    arr_instrumented[arr_instrumented.length] = "library(\"R2HTML\")\ncrdata_job_log <- file(\"job.log\", open=\"wt\")\nsink(crdata_job_log)\ncrdata_target <- HTMLInitFile(getwd(), filename=\"index\")\ntryCatch({\n"
 
     File.open(orig_r_script, "r").each do | line |
 =begin
@@ -106,7 +106,7 @@ class InstrumentDeveloperScript
     end
 
     # automatically take care of FOOTER mandatory tag
-    arr_instrumented[arr_instrumented.length] = "\nHTMLEndFile()\nsink()\n"
+    arr_instrumented[arr_instrumented.length] = "\nHTMLEndFile()\nsink()\n\n}, interrupt = function(ex) {\nprint (\"got exception\");\nprint(ex);\n}, error = function(ex) {\nprint (\"got error\");\nprint(ex);\n}, finally = {\n})\n"
 
     # now write instrumented array into the original R script
     r_script_file_handle = File.open(orig_r_script, aModeString="w")
