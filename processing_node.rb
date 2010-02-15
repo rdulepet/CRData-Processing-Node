@@ -58,7 +58,7 @@ class ProcessingNode
           job.store_results_and_logs if !job.nil?
 
           # STEP 8
-          job_completed(job, true) if !job.nil?
+          job_completed(job) if !job.nil?
         rescue => err
           Global.logger.fatal(err)
 
@@ -66,7 +66,7 @@ class ProcessingNode
           job.store_results_and_logs if !job.nil?
 
           # STEP 8
-          job_completed(job, false) if job.nil?
+          job_completed(job) if job.nil?
           job = nil
         end
       rescue => err2
@@ -79,15 +79,22 @@ class ProcessingNode
 
   def fetch_next_job
     # issue command to fetch next job
-    xml_response = @site['jobs_queues/run_next_job'].put '', {:content_length => '0', :content_type => 'text/xml'}
-    job = Job.new(xml_response)
-
-    job
+    begin
+      xml_response = @site['jobs_queues/run_next_job'].put '', {:content_length => '0', :content_type => 'text/xml'}
+      job = Job.new(xml_response)
+      return job
+    rescue Exception => exception_not_found
+      return_status = exception_not_found.to_s
+      # don't report too much stuff to log, unnecessary logging
+      # ResourceNotFound is reported when there are no new jobs
+      Global.logger.fatal(return_status) if !/ResourceNotFound/.match(return_status)
+      return nil
+    end
   end
 
-  def job_completed(job, successful)
+  def job_completed(job)
     # mark status of the job on server
-    if successful
+    if job.job_status == Global::SUCCESSFUL_JOB
       #success_length = "success=true".length
       #@site["jobs/#{job.get_id}/done.xml?success=true"].put '', {:content_length => '0', :content_type => 'text/plain'}
       Global.logger.info('COMPLETED JOB, MARKING JOB SUCCESSFUL')

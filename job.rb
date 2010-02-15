@@ -26,13 +26,14 @@ class Job
   VALUE_ENUMERATION = "Enumeration"
   VALUE_STRING = "String"
 
-  attr_reader :r_script_filename, :job_id, :curr_uuid, :r_call_interface
+  attr_reader :r_script_filename, :job_id, :curr_uuid, :r_call_interface, :job_status
 
   def initialize(xml_response)
     @r_call_interface = RSRuby.instance
     @r_script_filename = nil
     @job_id = 0
     @curr_uuid = Global.rand_uuid
+    @job_status = Global::SUCCESSFUL_JOB
     # log request
     Global.logger.info(xml_response)
     
@@ -97,9 +98,16 @@ class Job
       # to capture HTML output as well as log stuff
       InstrumentDeveloperScript::instrument_code "#{@curr_uuid}.r"
     end
+
+    # assume that job will be successful by default
+    # let the R script will indicate if failure
+    @job_status = Global::SUCCESSFUL_JOB
     
     # run the instrumented script
     @r_call_interface.eval_R("source('#{@curr_uuid}.r')")
+
+    # fetch the r program execution status
+    File.open( Global::JOB_LOG ) {|io| io.grep(/#{Global::FAILED_JOB}/) { |s| @job_status = Global::FAILED_JOB }}
   end
 
   def get_id

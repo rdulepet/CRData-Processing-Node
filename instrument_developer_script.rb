@@ -106,7 +106,7 @@ class InstrumentDeveloperScript
     end
 
     # automatically take care of FOOTER mandatory tag
-    arr_instrumented[arr_instrumented.length] = "\nHTMLEndFile()\nsink()\n\n}, interrupt = function(ex) {\nprint (\"got exception\");\nprint(ex);\n}, error = function(ex) {\nprint (\"got error\");\nprint(ex);\n}, finally = {\n})\n"
+    arr_instrumented[arr_instrumented.length] = "\n}, interrupt = function(ex) {\nprint (\"got exception: Failed Job\");\n returnstatus=\"FAILED JOB, PLEASE CHECK LOG\"; \nHTML(returnstatus, file=crdata_target);\nprint(ex);\n}, error = function(ex) {\nprint (\"got error: Failed Job\");\n returnstatus=\"FAILED JOB, PLEASE CHECK LOG\"; \nHTML(returnstatus, file=crdata_target);\nprint(ex);\n}, finally = {\nHTMLEndFile()\nsink()\n\n})\n"
 
     # now write instrumented array into the original R script
     r_script_file_handle = File.open(orig_r_script, aModeString="w")

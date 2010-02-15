@@ -10,7 +10,6 @@ plot(tmp)
 
 #<crdata_image caption="Second Graph">plot(tmp)
 #</crdata_image>
-
 #<crdata_image caption="Third Graph">plot(tmp)</crdata_image>
 
 #<crdata_image>plot(tmp)</crdata_image>
