@@ -23,6 +23,11 @@ class Global
   MAIN_BUCKET    = 'crdataapp'
   MAIN_BUCKET_URL = 'http://crdataapp.s3.amazonaws.com/'
 
+  SUCCESSFUL_JOB = 'Successful Job'
+  FAILED_JOB = 'Failed Job'
+  RETURN_STATUS = 'FAILED JOB, PLEASE CHECK LOG'
+  JOB_LOG = 'job.log'
+
   TEMP_DIR = "temp"
   LOG_FILE = "/tmp/processing_node_error.log"
 
