@@ -55,7 +55,7 @@ class InstrumentDeveloperScript
       if amatch
         arr_instrumented[arr_instrumented.length] = "library(\"R2HTML\")\ncrdata_job_log <- file(\"job.log\", open=\"wt\")\nsink(crdata_job_log)\ncrdata_target <- HTMLInitFile(getwd(), filename=\"index\")\n"
       elsif amatch = /#{CRDATA_FOOTER}/.match(line)
-        arr_instrumented[arr_instrumented.length] = "HTMLEndFile()\nsink()\n"
+        arr_instrumented[arr_instrumented.length] = "HTMLEndFile()\nsink()\nclose(crdata_job_log)\n"
       elsif
 =end
       if amatch = /#{CRDATA_SECTION}/.match(line)
@@ -106,7 +106,7 @@ class InstrumentDeveloperScript
     end
 
     # automatically take care of FOOTER mandatory tag
-    arr_instrumented[arr_instrumented.length] = "\n}, interrupt = function(ex) {\nprint (\"got exception: Failed Job\");\n returnstatus=\"FAILED JOB, PLEASE CHECK LOG\"; \nHTML(returnstatus, file=crdata_target);\nprint(ex);\n}, error = function(ex) {\nprint (\"got error: Failed Job\");\n returnstatus=\"FAILED JOB, PLEASE CHECK LOG\"; \nHTML(returnstatus, file=crdata_target);\nprint(ex);\n}, finally = {\nHTMLEndFile()\nsink()\n\n})\n"
+    arr_instrumented[arr_instrumented.length] = "\n}, interrupt = function(ex) {\nprint (\"got exception: Failed Job\");\n returnstatus=\"FAILED JOB, PLEASE CHECK LOG\"; \nHTML(returnstatus, file=crdata_target);\nprint(ex);\n}, error = function(ex) {\nprint (\"got error: Failed Job\");\n returnstatus=\"FAILED JOB, PLEASE CHECK LOG\"; \nHTML(returnstatus, file=crdata_target);\nprint(ex);\n}, finally = {\nprint(\"JOB ENDED\");\nHTMLEndFile()\nsink()\nclose(crdata_job_log)\n\n})\n"
 
     # now write instrumented array into the original R script
     r_script_file_handle = File.open(orig_r_script, aModeString="w")

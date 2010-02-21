@@ -51,7 +51,11 @@ class ProcessingNode
           # STEP 1
           job = fetch_next_job()
 
-          # STEP 3-6
+          # STEP 3-5
+          job.fetch_source_code if !job.nil?
+          job.fetch_params if !job.nil?
+
+          # STEP 6
           job.run if !job.nil?
 
           # STEP 7
@@ -62,11 +66,12 @@ class ProcessingNode
         rescue => err
           Global.logger.fatal(err)
 
+          # STEP 8
+          job_completed(job) if !job.nil?
+
           # STEP 7
           job.store_results_and_logs if !job.nil?
 
-          # STEP 8
-          job_completed(job) if job.nil?
           job = nil
         end
       rescue => err2
