@@ -96,6 +96,12 @@ class Job
           #@r_call_interface.assign(job_params[PARAM_NAME], job_params[PARAM_VALUE].to_s)
           r_script_inc_file_handle.puts "#{job_params[PARAM_NAME]} = \"#{job_params[PARAM_VALUE].to_s}\""
           Global.logger.info("R_PARAMETER::#{job_params[PARAM_NAME]} = #{job_params[PARAM_VALUE]}")
+        elsif job_params[PARAM_KIND] == VALUE_BOOLEAN
+          #@r_call_interface.assign(job_params[PARAM_NAME], job_params[PARAM_VALUE].to_s)
+          bool_val = "TRUE"
+          bool_val = "FALSE" if job_params[PARAM_VALUE].to_i == 0
+          r_script_inc_file_handle.puts "#{job_params[PARAM_NAME]} = #{bool_val}"
+          Global.logger.info("R_PARAMETER::#{job_params[PARAM_NAME]} = #{bool_val}")
         else
           #@r_call_interface.assign(job_params[PARAM_NAME], job_params[PARAM_VALUE].to_f)
           r_script_inc_file_handle.puts "#{job_params[PARAM_NAME]} = #{job_params[PARAM_VALUE].to_f}"
