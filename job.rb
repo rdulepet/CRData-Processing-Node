@@ -55,6 +55,13 @@ class Job
     @job_id = (@doc/'job'/'id').inner_text
     Global.logger.info("JOB_ID = #{@job_id}, LOCAL_DIR = #{Global.results_dir}/#{@curr_uuid}, SCRIPT_NAME = #{@r_script_filename}")
     r_script = (@doc/'source-code').inner_text
+
+    # there is possibility that ^M characters are embedded in the R script
+    # these happen when files are edited in Windows and uploaded
+    # so lets remove it before further processing, R will not run with these
+    # ^M characters otherwise
+    r_script.gsub!(/\015/,"")
+    
     r_script_file_handle = File.open(@r_script_filename, aModeString="w")
     # this is done to pass variables
     r_script_file_handle.puts "source(\"#{@r_script_inc_filename}\")\n"
