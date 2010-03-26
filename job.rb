@@ -12,7 +12,7 @@ require 'cgi'
 
 require 'global'
 require 'instrument_developer_script'
-
+require 's3_upload'
 
 class Job
   JOB_FIELDS = %w[name value kind data_set_s3_file]
@@ -28,14 +28,17 @@ class Job
 
   attr_reader :r_script_filename, :job_id, :curr_uuid, :r_call_interface
   attr_reader :job_status, :r_script_inc_filename, :doc
+  attr_reader :server_node
 
-  def initialize(xml_response)
+  def initialize(xml_response, server_node)
     #@r_call_interface = RSRuby.instance
     @r_script_filename = nil
     @r_script_inc_filename = nil
     @job_id = 0
     @curr_uuid = Global.rand_uuid
     @job_status = Global::FAILED_JOB
+    @server_node = server_node
+    
     # log request
     Global.logger.info(xml_response)
     
@@ -184,10 +187,7 @@ class Job
     # first store log
     begin
       puts "LOG_FILE = logs/job_#{normalized_get_id}/job.log"
-      Global.s3if.put(Global::MAIN_BUCKET,
-        "logs/job_#{normalized_get_id}/job.log",
-        File.open("#{Global.results_dir}/#{@curr_uuid}/job.log"),
-        Global::S3_OPTIONS)
+      upload_results_to_s3(@server_node, @job_id, "logs", "job.log", "#{Global.results_dir}/#{@curr_uuid}/job.log")
     rescue => err_store_log
       Global.logger.info('probably no error log generated, happens for successful jobs that have no output or error')
     end
@@ -207,11 +207,11 @@ class Job
                   File.extname(file) == '.pdf')}.each{|name|
                       name = name.split("/").last
                       puts "RESULTS_FILE = #{Global.results_dir}/#{@curr_uuid}/#{name}"
-                      Global.s3if.put(Global::MAIN_BUCKET,
-                        "results/job_#{normalized_get_id}/#{name}",
-                        File.open("#{Global.results_dir}/#{@curr_uuid}/#{name}"),
-                        Global::S3_OPTIONS)
+                      upload_results_to_s3(@server_node,
+                          @job_id,
+                          "results",
+                          name,
+                          "#{Global.results_dir}/#{@curr_uuid}/#{name}")
                   }
-
   end
 end
