@@ -15,14 +15,6 @@ class Global
   @@results_dir = nil
 
   # CONSTANTS
-  # parse xml find S3 location and store results in S3
-  S3_OPTIONS = { 'x-amz-acl' => 'public-read' } # For now all is public
-  # Keys for the main CRData Amazon account - read from env!
-  AWS_ACCESS_KEY = 'AKIAJZ5KSZXV2N4XIKNA'
-  AWS_SECRET_KEY = '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'
-  MAIN_BUCKET    = 'crdataapp'
-  MAIN_BUCKET_URL = 'http://crdataapp.s3.amazonaws.com/'
-
   SUCCESSFUL_JOB = 'Successful Job'
   FAILED_JOB = 'Failed Job'
   RETURN_STATUS = 'FAILED JOB, PLEASE CHECK LOG'
@@ -61,18 +53,6 @@ class Global
       @@results_dir = (FileUtils.pwd + "/" + TEMP_DIR) unless @@results_dir
   end
 
-  # Helper to return an interface to S3
-  def self.s3if
-    # A trck to control the RightAWS logging
-    $VERBOSE = nil if @verbose == 0 # Totally silence ruby if we're in silent mode. Useful for cron scripts
-
-    s3_opts = {:multi_thread => true, :logger => nil}
-
-    $S3 ||= RightAws::S3Interface.new(Global::AWS_ACCESS_KEY, Global::AWS_SECRET_KEY, s3_opts)
-
-    $S3
-  end
-
   def self.rand_hex_3(l)
     "%0#{l}x" % rand(1 << l*4)
   end
@@ -81,17 +61,16 @@ class Global
     [8,4,4,4,12].map {|n| rand_hex_3(n)}.join('-')
   end
 
-
   def self.create_if_missing_directory *names
     names.each do |name| FileUtils.mkdir(name) unless File.directory?(name) end
   end
 end
 
 class String
-  def clean_s3_url
-     self.gsub(Global::MAIN_BUCKET_URL,'')
-  end
   def last_part
      self[self.rindex('/')+1..-1]
+  end
+  def last_part_without_params
+    self[self.rindex('/')+1..-1].gsub /\?Signature.*/, ''
   end
 end

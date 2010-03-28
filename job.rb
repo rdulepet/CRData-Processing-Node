@@ -15,11 +15,11 @@ require 'instrument_developer_script'
 require 's3_upload'
 
 class Job
-  JOB_FIELDS = %w[name value kind data_set_s3_file]
+  JOB_FIELDS = %w[name value kind data_set_url]
   PARAM_NAME = "name"
   PARAM_VALUE = "value"
   PARAM_KIND = "kind"
-  PARAM_DATA_SET = "data_set_s3_file"
+  PARAM_DATA_SET = "data_set_url"
   VALUE_DATA_SET = "Dataset"
   VALUE_INTEGER = "Integer"
   VALUE_BOOLEAN = "Boolean"
@@ -87,21 +87,16 @@ class Job
         job_params = {}
 
         JOB_FIELDS.each do |el|
-          job_params[el] = CGI::unescapeHTML(param.at(el).innerHTML)
+          job_params[el] = CGI::unescapeHTML(CGI::unescape(param.at(el).innerHTML))
         end
 
         if job_params[PARAM_KIND] == VALUE_DATA_SET
-          just_name = job_params[PARAM_DATA_SET].to_s.last_part
+          just_name = job_params[PARAM_DATA_SET].to_s.last_part_without_params
           #@r_call_interface.assign(job_params[PARAM_NAME], just_name)
           r_script_inc_file_handle.puts "#{job_params[PARAM_NAME]} = \"#{just_name}\""
           Global.logger.info("R_PARAMETER::#{job_params[PARAM_NAME]} = #{just_name}")
 
-          data_file_handle = File.new("#{Global.results_dir}/#{@curr_uuid}/#{just_name}", 'wb')
-          # stream file in chunks especially makes more sense for larger files
-          rhdr = Global.s3if.get(Global::MAIN_BUCKET, job_params[PARAM_DATA_SET].to_s.clean_s3_url) do |chunk|
-            data_file_handle.write chunk
-          end
-          data_file_handle.close
+          fetch_data_file job_params[PARAM_DATA_SET], "#{Global.results_dir}/#{@curr_uuid}/#{just_name}"
         elsif job_params[PARAM_KIND] == VALUE_STRING
           #@r_call_interface.assign(job_params[PARAM_NAME], job_params[PARAM_VALUE].to_s)
           r_script_inc_file_handle.puts "#{job_params[PARAM_NAME]} = \"#{job_params[PARAM_VALUE].to_s}\""
