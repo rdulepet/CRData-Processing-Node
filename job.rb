@@ -136,11 +136,11 @@ class Job
     # check if the R code was already instrumented by the developer
     # if so then skip instrumentation and just trust it
     # otherwise instrument it
-    if !InstrumentDeveloperScript::checkif_already_instrumented_code "#{Global.results_dir}/#{@curr_uuid}/#{@curr_uuid}.r"
+    #if !InstrumentDeveloperScript::checkif_already_instrumented_code "#{Global.results_dir}/#{@curr_uuid}/#{@curr_uuid}.r"
       # instrument the R code before running the job to capture output
       # to capture HTML output as well as log stuff
       InstrumentDeveloperScript::instrument_code "#{Global.results_dir}/#{@curr_uuid}/#{@curr_uuid}.r"
-    end
+    #end
 
     # assume that job will be successful by default
     # let the R script will indicate if failure
