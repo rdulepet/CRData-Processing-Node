@@ -25,6 +25,7 @@ class Job
   VALUE_BOOLEAN = "Boolean"
   VALUE_ENUMERATION = "Enumeration"
   VALUE_STRING = "String"
+  VALUE_LIST = "List"
 
   attr_reader :r_script_filename, :job_id, :curr_uuid, :r_call_interface
   attr_reader :job_status, :r_script_inc_filename, :doc
@@ -98,6 +99,10 @@ class Job
 
           fetch_data_file job_params[PARAM_DATA_SET], "#{Global.results_dir}/#{@curr_uuid}/#{just_name}"
         elsif job_params[PARAM_KIND] == VALUE_STRING
+          #@r_call_interface.assign(job_params[PARAM_NAME], job_params[PARAM_VALUE].to_s)
+          r_script_inc_file_handle.puts "#{job_params[PARAM_NAME]} = \"#{job_params[PARAM_VALUE].to_s}\""
+          Global.logger.info("R_PARAMETER::#{job_params[PARAM_NAME]} = #{job_params[PARAM_VALUE]}")
+        elsif job_params[PARAM_KIND] == VALUE_LIST
           #@r_call_interface.assign(job_params[PARAM_NAME], job_params[PARAM_VALUE].to_s)
           r_script_inc_file_handle.puts "#{job_params[PARAM_NAME]} = \"#{job_params[PARAM_VALUE].to_s}\""
           Global.logger.info("R_PARAMETER::#{job_params[PARAM_NAME]} = #{job_params[PARAM_VALUE]}")
