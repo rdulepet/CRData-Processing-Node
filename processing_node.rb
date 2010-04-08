@@ -86,7 +86,12 @@ class ProcessingNode
     # issue command to fetch next job
     begin
       xml_response = @site['jobs_queues/run_next_job'].put '', {:content_length => '0', :content_type => 'text/xml'}
-      job = Job.new(xml_response, @server_node)
+      begin
+        job = Job.new(xml_response, @server_node)
+      rescue Exception => alt_xml_body
+        # for some reason we have to try both methods...
+        job = Job.new(xml_response.body, @server_node)
+      end
       return job
     rescue Exception => exception_not_found
       return_status = exception_not_found.to_s
