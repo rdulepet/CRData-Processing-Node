@@ -23,6 +23,29 @@ def upload_results_to_s3 (server_name, job_id, type, fname, fpath_name)
 
 end
 
+
+def upload_data_to_s3 (server_name, job_id, type, fname, fpath_name)
+  s3_data = ''
+  response =  Net::HTTP.get(URI.parse("http://#{server_name}/jobs/#{job_id}/uploadurls.xml?upload_type=#{type}&files=#{fname}"))
+
+  s3_data = XmlSimple.xml_in(response)
+  #puts s3_data.inspect
+
+  #this is just so we can parse it fast
+  host = s3_data["files"].first[fname].first['host'].first
+  port =  s3_data["files"].first[fname].first['port'].first
+  header =  s3_data["files"].first[fname].first['header'].first
+  ssl =  s3_data["files"].first[fname].first['ssl'].first['content']
+  path =  s3_data["files"].first[fname].first['path'].first
+  
+  File.open(fpath_name, 'rb') do |up_file|
+     send_request('Put', host, port, path, header, up_file, ssl) 
+  end
+
+  #create dataset object form path
+  Net::HTTP.get(URI.parse("http://#{server_name}/data_sets/create_from_path.xml?name=job_result_dataset&job_id=#{job_id}&path=#{path}"))
+end
+
 def fetch_data_file(s3url, dest_file)
 	url = URI.parse s3url
   http = Net::HTTP.new(url.host, url.port)

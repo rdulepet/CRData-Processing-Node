@@ -30,6 +30,7 @@ class Job
   attr_reader :r_script_filename, :job_id, :curr_uuid, :r_call_interface
   attr_reader :job_status, :r_script_inc_filename, :doc
   attr_reader :server_node
+  attr_reader :in_data_files
 
   def initialize(xml_response, server_node)
     #@r_call_interface = RSRuby.instance
@@ -39,6 +40,7 @@ class Job
     @curr_uuid = Global.rand_uuid
     @job_status = Global::FAILED_JOB
     @server_node = server_node
+    @in_data_files = Hash.new
     
     # log request
     Global.logger.info(xml_response)
@@ -96,6 +98,9 @@ class Job
           #@r_call_interface.assign(job_params[PARAM_NAME], just_name)
           r_script_inc_file_handle.puts "#{job_params[PARAM_NAME]} = \"#{just_name}\""
           Global.logger.info("R_PARAMETER::#{job_params[PARAM_NAME]} = #{just_name}")
+          
+          # track all input data files
+          @in_data_files[just_name] = 1
 
           fetch_data_file job_params[PARAM_DATA_SET], "#{Global.results_dir}/#{@curr_uuid}/#{just_name}"
         elsif job_params[PARAM_KIND] == VALUE_STRING
@@ -212,6 +217,28 @@ class Job
                           "results",
                           name,
                           "#{Global.results_dir}/#{@curr_uuid}/#{name}")
+                  }
+  end
+
+  def store_data
+    # now iterate through directory and store all results files (web content only)
+    
+    # upload only web content files for results
+    # .html,.htm,.css,.png,.pdf,.jpg
+    # iterate through directory and store files one at a time in S3
+    upload_files = Dir[File.join("#{Global.results_dir}/#{@curr_uuid}", "*")].select{|file| File.ftype(file) == "file" &&
+                  (File.extname(file) == '.crd' ||
+                  File.extname(file) == '.out' ||
+                  File.extname(file) == '.sav')}.each{|name|
+                      name = name.split("/").last
+                      if ! @in_data_files.has_key?(name)
+                        puts "DATA_OUTPUT_FILE = #{Global.results_dir}/#{@curr_uuid}/#{name}"
+                        upload_data_to_s3(@server_node,
+                            @job_id,
+                            "data",
+                            name,
+                            "#{Global.results_dir}/#{@curr_uuid}/#{name}")
+                      end
                   }
   end
 end

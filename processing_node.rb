@@ -61,6 +61,9 @@ class ProcessingNode
           # STEP 7
           job.store_results_and_logs if !job.nil?
 
+          # STEP 7
+          job.store_data if !job.nil?
+
           # STEP 8
           job_completed(job) if !job.nil?
         rescue => err
