@@ -43,7 +43,7 @@ def upload_data_to_s3 (server_name, job_id, type, fname, fpath_name)
   end
 
   #create dataset object form path
-  Net::HTTP.get(URI.parse("http://#{server_name}/data_sets/create_from_path.xml?name=job_result_dataset&job_id=#{job_id}&path=#{path}"))
+  Net::HTTP.get(URI.parse("http://#{server_name}/data_sets/create_from_path.xml?name=#{fname}&job_id=#{job_id}&path=#{path}"))
 end
 
 def fetch_data_file(s3url, dest_file)
