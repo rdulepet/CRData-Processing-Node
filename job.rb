@@ -202,7 +202,7 @@ class Job
     # .html,.htm,.css,.png,.pdf,.jpg
     # iterate through directory and store files one at a time in S3
     upload_files = Dir[File.join("#{Global.results_dir}/#{@curr_uuid}", "*")].select{|file| File.ftype(file) == "file" &&
-                  /\.(jpg|png|gif|html|htm|js|css|pdf)$/.match(file)}.each{|name|
+                  /\.(jpg|png|gif|html|htm|js|css|pdf)$/.match(file.downcase)}.each{|name|
                       name = name.split("/").last
                       puts "RESULTS_FILE = #{Global.results_dir}/#{@curr_uuid}/#{name}"
                       upload_results_to_s3(@server_node,
@@ -222,7 +222,7 @@ class Job
     upload_files = Dir[File.join("#{Global.results_dir}/#{@curr_uuid}", "*")].select{|file|
         puts "file in dir=#{file}"
                 File.ftype(file) == "file" &&
-                  !/\.(jpg|png|gif|html|htm|js|css|pdf|log|r|rb|java|php|py|pyc|jar|gz|tar|zip|class|exe|so|o)$/.match(file)}.each{|name|
+                  !/\.(jpg|png|gif|html|htm|js|css|pdf|log|r|rb|java|php|py|pyc|jar|gz|tar|zip|class|exe|so|o|dll|lib)$/.match(file.downcase)}.each{|name|
                       name = name.split("/").last
                       if ! @in_data_files.has_key?(name)
                         puts "DATA_OUTPUT_FILE = #{Global.results_dir}/#{@curr_uuid}/#{name}"
