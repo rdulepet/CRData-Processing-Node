@@ -202,14 +202,7 @@ class Job
     # .html,.htm,.css,.png,.pdf,.jpg
     # iterate through directory and store files one at a time in S3
     upload_files = Dir[File.join("#{Global.results_dir}/#{@curr_uuid}", "*")].select{|file| File.ftype(file) == "file" &&
-                  (File.extname(file) == '.jpg' ||
-                  File.extname(file) == '.png' ||
-                  File.extname(file) == '.gif' ||
-                  File.extname(file) == '.html' ||
-                  File.extname(file) == '.htm' ||
-                  File.extname(file) == '.js' ||
-                  File.extname(file) == '.css' ||
-                  File.extname(file) == '.pdf')}.each{|name|
+                  /\.(jpg|png|gif|html|htm|js|css|pdf)$/.match(file)}.each{|name|
                       name = name.split("/").last
                       puts "RESULTS_FILE = #{Global.results_dir}/#{@curr_uuid}/#{name}"
                       upload_results_to_s3(@server_node,
@@ -226,16 +219,10 @@ class Job
     # upload only web content files for results
     # .html,.htm,.css,.png,.pdf,.jpg
     # iterate through directory and store files one at a time in S3
-    upload_files = Dir[File.join("#{Global.results_dir}/#{@curr_uuid}", "*")].select{|file| File.ftype(file) == "file" &&
-                  (File.extname(file) != '.jpg' &&
-                  File.extname(file) != '.png' &&
-                  File.extname(file) != '.gif' &&
-                  File.extname(file) != '.html' &&
-                  File.extname(file) != '.htm' &&
-                  File.extname(file) != '.js' &&
-                  File.extname(file) != '.css' &&
-                  File.extname(file) != '.pdf' &&
-                  File.extname(file) != '.log')}.each{|name|
+    upload_files = Dir[File.join("#{Global.results_dir}/#{@curr_uuid}", "*")].select{|file|
+        puts "file in dir=#{file}"
+                File.ftype(file) == "file" &&
+                  !/\.(jpg|png|gif|html|htm|js|css|pdf|log|r|rb|java|php|py|pyc|jar|gz|tar|zip|class|exe|so|o)$/.match(file)}.each{|name|
                       name = name.split("/").last
                       if ! @in_data_files.has_key?(name)
                         puts "DATA_OUTPUT_FILE = #{Global.results_dir}/#{@curr_uuid}/#{name}"
