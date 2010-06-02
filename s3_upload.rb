@@ -26,10 +26,11 @@ end
 
 def upload_data_to_s3 (server_name, job_id, type, fname, fpath_name)
   s3_data = ''
+  puts "UPLOAD_DATA_TO_S3::http://#{server_name}/jobs/#{job_id}/uploadurls.xml?upload_type=#{type}&files=#{fname}"
+
   response =  Net::HTTP.get(URI.parse("http://#{server_name}/jobs/#{job_id}/uploadurls.xml?upload_type=#{type}&files=#{fname}"))
 
   s3_data = XmlSimple.xml_in(response)
-  #puts s3_data.inspect
 
   #this is just so we can parse it fast
   host = s3_data["files"].first[fname].first['host'].first
@@ -43,6 +44,7 @@ def upload_data_to_s3 (server_name, job_id, type, fname, fpath_name)
   end
 
   #create dataset object form path
+  puts "UPLOAD_DATA_TO_S3::CREATE_DATASET::http://#{server_name}/data_sets/create_from_path.xml?name=#{fname}&job_id=#{job_id}&path=#{path}"
   Net::HTTP.get(URI.parse("http://#{server_name}/data_sets/create_from_path.xml?name=#{fname}&job_id=#{job_id}&path=#{path}"))
 end
 

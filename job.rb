@@ -227,9 +227,15 @@ class Job
     # .html,.htm,.css,.png,.pdf,.jpg
     # iterate through directory and store files one at a time in S3
     upload_files = Dir[File.join("#{Global.results_dir}/#{@curr_uuid}", "*")].select{|file| File.ftype(file) == "file" &&
-                  (File.extname(file) == '.crd' ||
-                  File.extname(file) == '.out' ||
-                  File.extname(file) == '.sav')}.each{|name|
+                  (File.extname(file) != '.jpg' &&
+                  File.extname(file) != '.png' &&
+                  File.extname(file) != '.gif' &&
+                  File.extname(file) != '.html' &&
+                  File.extname(file) != '.htm' &&
+                  File.extname(file) != '.js' &&
+                  File.extname(file) != '.css' &&
+                  File.extname(file) != '.pdf' &&
+                  File.extname(file) != '.log')}.each{|name|
                       name = name.split("/").last
                       if ! @in_data_files.has_key?(name)
                         puts "DATA_OUTPUT_FILE = #{Global.results_dir}/#{@curr_uuid}/#{name}"
