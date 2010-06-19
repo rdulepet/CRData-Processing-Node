@@ -71,6 +71,11 @@ class String
      self[self.rindex('/')+1..-1]
   end
   def last_part_without_params
-    self[self.rindex('/')+1..-1].gsub /\?Signature.*/, ''
+    sig_pos = self.rindex("?Signature") - 1
+    if sig_pos > 2
+      self[self[0..sig_pos].rindex('/')+1..sig_pos]
+    else
+      self.last_part
+    end
   end
 end

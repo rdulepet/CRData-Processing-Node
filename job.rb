@@ -94,6 +94,8 @@ class Job
         end
 
         if job_params[PARAM_KIND] == VALUE_DATA_SET
+          Global.logger.info("PARAM_NAME_DATASET::#{job_params[PARAM_NAME]} = #{job_params[PARAM_DATA_SET].to_s}")
+
           just_name = job_params[PARAM_DATA_SET].to_s.last_part_without_params
           #@r_call_interface.assign(job_params[PARAM_NAME], just_name)
           r_script_inc_file_handle.puts "#{job_params[PARAM_NAME]} = \"#{just_name}\""
@@ -102,7 +104,9 @@ class Job
           # track all input data files
           @in_data_files[just_name] = 1
 
-          fetch_data_file job_params[PARAM_DATA_SET], "#{Global.results_dir}/#{@curr_uuid}/#{just_name}"
+          puts "PARAM_NAME_DATASET::#{job_params[PARAM_NAME]} = #{job_params[PARAM_DATA_SET].to_s}"
+          puts "MODIFIED_PARAM_NAME_DATASET::#{job_params[PARAM_NAME]} = #{job_params[PARAM_DATA_SET].to_s.gsub(/&amp;/, '&')}"
+          fetch_data_file job_params[PARAM_DATA_SET].to_s.gsub(/&amp;/, '&'), "#{Global.results_dir}/#{@curr_uuid}/#{just_name}"
         elsif job_params[PARAM_KIND] == VALUE_STRING
           #@r_call_interface.assign(job_params[PARAM_NAME], job_params[PARAM_VALUE].to_s)
           r_script_inc_file_handle.puts "#{job_params[PARAM_NAME]} = \"#{job_params[PARAM_VALUE].to_s}\""
