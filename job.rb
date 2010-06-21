@@ -91,6 +91,8 @@ class Job
 
         JOB_FIELDS.each do |el|
           job_params[el] = CGI::unescapeHTML(CGI::unescape(param.at(el).innerHTML))
+          # if dataset url then don't do any unescaping, we want to remove only &
+          job_params[el] = param.at(el).innerHTML.to_s.gsub(/&amp;/, '&') if el == PARAM_DATA_SET
         end
 
         if job_params[PARAM_KIND] == VALUE_DATA_SET
@@ -105,8 +107,8 @@ class Job
           @in_data_files[just_name] = 1
 
           puts "PARAM_NAME_DATASET::#{job_params[PARAM_NAME]} = #{job_params[PARAM_DATA_SET].to_s}"
-          puts "MODIFIED_PARAM_NAME_DATASET::#{job_params[PARAM_NAME]} = #{job_params[PARAM_DATA_SET].to_s.gsub(/&amp;/, '&')}"
-          fetch_data_file job_params[PARAM_DATA_SET].to_s.gsub(/&amp;/, '&'), "#{Global.results_dir}/#{@curr_uuid}/#{just_name}"
+          puts "MODIFIED_PARAM_NAME_DATASET::#{job_params[PARAM_NAME]} = #{job_params[PARAM_DATA_SET]}"
+          fetch_data_file job_params[PARAM_DATA_SET], "#{Global.results_dir}/#{@curr_uuid}/#{just_name}"
         elsif job_params[PARAM_KIND] == VALUE_STRING
           #@r_call_interface.assign(job_params[PARAM_NAME], job_params[PARAM_VALUE].to_s)
           r_script_inc_file_handle.puts "#{job_params[PARAM_NAME]} = \"#{job_params[PARAM_VALUE].to_s}\""
@@ -229,11 +231,13 @@ class Job
                   !/\.(jpg|png|gif|html|htm|js|css|pdf|log|r|rb|java|php|py|pyc|jar|gz|tar|zip|class|exe|so|o|dll|lib)$/.match(file.downcase)}.each{|name|
                       name = name.split("/").last
                       if ! @in_data_files.has_key?(name)
+                        # seems like underscore is issue so replace with hyphen
+                        uploaded_name = "job-#{normalized_get_id}-#{name}".gsub(/_/, '-')
                         puts "DATA_OUTPUT_FILE = #{Global.results_dir}/#{@curr_uuid}/#{name}"
                         upload_data_to_s3(@server_node,
                             @job_id,
                             "data",
-                            name,
+                            uploaded_name,
                             "#{Global.results_dir}/#{@curr_uuid}/#{name}")
                       end
                   }
