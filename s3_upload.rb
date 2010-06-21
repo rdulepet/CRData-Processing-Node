@@ -53,12 +53,14 @@ def fetch_data_file(s3url, dest_file)
   http = Net::HTTP.new(url.host, url.port)
   http.use_ssl = (url.scheme == 'https')
 
-  puts "URL_FETCH=#{url.path + '?' + url.query}"
+  url_fetch = url.path
+  url_fetch = url.path + '?' + url.query if !url.query.nil?
+  puts "URL_FETCH=#{url_fetch}"
 
   # save output
   data_file_handle = File.new(dest_file, 'wb')
 
-  request = Net::HTTP::Get.new(url.path + '?' + url.query)
+  request = Net::HTTP::Get.new(url_fetch)
   # stream the file (efficient for larger files
   http.request(request) do |res|
     size, total = 0, res.header['Content-Length'].to_i
