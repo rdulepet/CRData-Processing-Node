@@ -167,7 +167,7 @@ class Job
 
     # go back to root dir before starting
     FileUtils.cd "#{Global.results_dir}/#{@curr_uuid}"
-    system "DISPLAY=localhost:1.0 R --no-save < #{@curr_uuid}.r;"
+    system "R --no-save < #{@curr_uuid}.r;"
 
     # mark default as successful job
     @job_status = Global::SUCCESSFUL_JOB
