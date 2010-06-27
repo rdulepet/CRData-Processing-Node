@@ -75,7 +75,7 @@ class InstrumentDeveloperScript
 
         curr_caption = amatch[2] if amatch[2] != nil and amatch[2] != ""
         some_r_code_found = amatch[3] if amatch[3] != nil and amatch[3] != ""
-        arr_instrumented[arr_instrumented.length] = "\npng(file.path(getwd(),\"#{curr_random_uuid}.png\"))\n"
+        arr_instrumented[arr_instrumented.length] = "\npng(filename = file.path(getwd(),\"#{curr_random_uuid}.png\"),type = \"cairo\")\n"
         if some_r_code_found != nil and some_r_code_found != ""
           arr_instrumented[arr_instrumented.length] = some_r_code_found.gsub(/#{CRDATA_IMAGE_END_ALT}/,"")
           # now see if we found END tag also, if so then insert image end instrumentation
