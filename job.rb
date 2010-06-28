@@ -106,8 +106,8 @@ class Job
           # track all input data files
           @in_data_files[just_name] = 1
 
-          puts "PARAM_NAME_DATASET::#{job_params[PARAM_NAME]} = #{job_params[PARAM_DATA_SET].to_s}"
-          puts "MODIFIED_PARAM_NAME_DATASET::#{job_params[PARAM_NAME]} = #{job_params[PARAM_DATA_SET]}"
+          Global.logger.info("PARAM_NAME_DATASET::#{job_params[PARAM_NAME]} = #{job_params[PARAM_DATA_SET].to_s}")
+          Global.logger.info("MODIFIED_PARAM_NAME_DATASET::#{job_params[PARAM_NAME]} = #{job_params[PARAM_DATA_SET]}")
           fetch_data_file job_params[PARAM_DATA_SET], "#{Global.results_dir}/#{@curr_uuid}/#{just_name}"
         elsif job_params[PARAM_KIND] == VALUE_STRING
           #@r_call_interface.assign(job_params[PARAM_NAME], job_params[PARAM_VALUE].to_s)
@@ -197,7 +197,7 @@ class Job
   def store_results_and_logs
     # first store log
     begin
-      puts "LOG_FILE = logs/job_#{normalized_get_id}/job.log"
+      Global.logger.info("LOG_FILE = logs/job_#{normalized_get_id}/job.log")
       upload_results_to_s3(@server_node, @job_id, "logs", "job.log", "#{Global.results_dir}/#{@curr_uuid}/job.log")
     rescue => err_store_log
       Global.logger.info('probably no error log generated, happens for successful jobs that have no output or error')
@@ -210,7 +210,7 @@ class Job
     upload_files = Dir[File.join("#{Global.results_dir}/#{@curr_uuid}", "*")].select{|file| File.ftype(file) == "file" &&
                   /\.(jpg|png|gif|html|htm|js|css|pdf)$/.match(file.downcase)}.each{|name|
                       name = name.split("/").last
-                      puts "RESULTS_FILE = #{Global.results_dir}/#{@curr_uuid}/#{name}"
+                      Global.logger.info("RESULTS_FILE = #{Global.results_dir}/#{@curr_uuid}/#{name}")
                       upload_results_to_s3(@server_node,
                           @job_id,
                           "results",
@@ -226,14 +226,14 @@ class Job
     # .html,.htm,.css,.png,.pdf,.jpg
     # iterate through directory and store files one at a time in S3
     upload_files = Dir[File.join("#{Global.results_dir}/#{@curr_uuid}", "*")].select{|file|
-        puts "file in dir=#{file}"
+        Global.logger.info( "file in dir=#{file}")
                 File.ftype(file) == "file" &&
                   !/\.(jpg|png|gif|html|htm|js|css|pdf|log|r|rb|java|php|py|pyc|jar|gz|tar|zip|class|exe|so|o|dll|lib)$/.match(file.downcase)}.each{|name|
                       name = name.split("/").last
                       if ! @in_data_files.has_key?(name)
                         # seems like underscore is issue so replace with hyphen
                         uploaded_name = "job-#{normalized_get_id}-#{name}".gsub(/_/, '-')
-                        puts "DATA_OUTPUT_FILE = #{Global.results_dir}/#{@curr_uuid}/#{name}"
+                        Global.logger.info("DATA_OUTPUT_FILE = #{Global.results_dir}/#{@curr_uuid}/#{name}")
                         upload_data_to_s3(@server_node,
                             @job_id,
                             "data",
