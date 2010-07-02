@@ -228,7 +228,7 @@ class Job
     upload_files = Dir[File.join("#{Global.results_dir}/#{@curr_uuid}", "*")].select{|file|
         Global.logger.info( "file in dir=#{file}")
                 File.ftype(file) == "file" &&
-                  !/\.(jpg|png|gif|html|htm|js|css|pdf|log|r|rb|java|php|py|pyc|jar|gz|tar|zip|class|exe|so|o|dll|lib)$/.match(file.downcase)}.each{|name|
+                  !/\.(jpg|png|gif|html|htm|js|css|pdf|log|r|rb|java|php|py|pyc|jar|class|exe|so|o|dll|lib)$/.match(file.downcase)}.each{|name|
                       name = name.split("/").last
                       if ! @in_data_files.has_key?(name)
                         # seems like underscore is issue so replace with hyphen
