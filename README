@@ -1,0 +1,23 @@
+                                      =============================================
+                                      === WELCOME TO THE CRDATA CODE REPOSITORY ===
+                                      =============================================
+
+This repo contains the code for CRdata Client Nodes. In addition to the code in this repo, you will also need the code for CRdata Server Nodes, available from:
+
+http://github.com/seerdata/crdata.git
+
+To explore the code in these files, we suggest you read the CRdata Programmer's Guide, available at:
+
+http://docs.google.com/View?id=ddj9nb8j_380dwcwx9gp
+
+Enjoy!
+
+The CRdata Development Team 
+(http://crdata.org/about)
+
+
+                            =====================================================================
+                                           CRdata.org is an open-source project 
+                                    (http://www.opensource.org/licenses/mit-license.php)
+                            Supported by a grant from the National Heart Lung and Blood Institute
+                            =====================================================================
